@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backstage-config
+  namespace: {{ .Release.Namespace }}
+data:
+  app-config.production.yaml: |
+{{ .Files.Get "app-config.production.yaml" | indent 4 }}

@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ name }}
+  description: Python FastAPI service generated via Backstage
+  annotations:
+    github.com/project-slug: {{ githubOrg }}/{{ name }}
+    backstage.io/techdocs-ref: dir:.
+    argocd/app-name: {{ name }}-dev
+    kubernetes.io/namespace: apps-dev
+spec:
+  type: service
+  lifecycle: production
+  owner: {{ owner }}
+  system: {{ system }}

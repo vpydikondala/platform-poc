@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: {{ acrName }}.azurecr.io/{{ name }}
+  tag: "0000000"
+
+service:
+  port: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  host: {{ name }}.example.com
+  tls:
+    enabled: true
+    secretName: {{ name }}-tls

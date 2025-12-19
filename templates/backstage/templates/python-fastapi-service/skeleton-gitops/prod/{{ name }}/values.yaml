@@ -1,0 +1,12 @@
+image:
+  tag: "0000000"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: {{ prodHost }}
+  tls:
+    enabled: true
+    secretName: {{ name }}-prod-tls
+
+replicaCount: 2

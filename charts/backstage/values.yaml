@@ -1,0 +1,20 @@
+image:
+  repository: ghcr.io/vpydikondala/backstage
+  tag: latest
+
+serviceAccount:
+  name: backstage-sa
+  azureClientId: ""
+
+env:
+  BACKSTAGE_HOST: ""
+  ARGOCD_URL: ""
+  GITHUB_ORG: ""
+  GITHUB_TOKEN: ""
+  TECHDOCS_STORAGE_ACCOUNT: ""
+  TECHDOCS_CONTAINER: "techdocs"
+  POSTGRES_HOST: ""
+  POSTGRES_USER: ""
+  POSTGRES_PASSWORD: ""
+  POSTGRES_DB: "backstage"
+  BACKSTAGE_AUTH_MODE: "guest"

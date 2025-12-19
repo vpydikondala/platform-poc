@@ -1,0 +1,51 @@
+name: 01 - Infra Apply (Terraform)
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  infra:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Create poc.env
+        run: cp poc.env.example poc.env
+      - name: Render Terraform
+        run: bash scripts/render.sh templates rendered
+      - name: Terraform init/apply
+        working-directory: rendered/terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
+      - name: Export Terraform outputs to env file
+        working-directory: rendered/terraform
+        run: |
+          terraform output -json > tf-outputs.json
+          jq -r '
+            [
+              "RG_NAME=" + .rg_name.value,
+              "AKS_NAME=" + .aks_name.value,
+              "ACR_NAME=" + .acr_name.value,
+              "STORAGE_ACCOUNT=" + .storage_account.value,
+              "BACKSTAGE_MI_CLIENT_ID=" + .backstage_mi_client_id.value,
+              "POSTGRES_FQDN=" + .postgres_fqdn.value,
+              "POSTGRES_DB=" + .postgres_db.value,
+              "POSTGRES_ADMIN_USER=" + .postgres_admin_user.value
+            ] | .[]
+          ' tf-outputs.json > infra.outputs.env
+      - name: Upload infra outputs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-outputs
+          path: rendered/terraform/infra.outputs.env

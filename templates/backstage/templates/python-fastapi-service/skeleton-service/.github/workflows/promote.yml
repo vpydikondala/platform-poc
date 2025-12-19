@@ -1,0 +1,34 @@
+name: Promote (GitOps)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [ dev, prod ]
+      image_tag:
+        required: true
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: {{ githubOrg }}/env-gitops
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: env-gitops
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+      - run: |
+          cd env-gitops
+          yq -i '.image.tag = "${{ inputs.image_tag }}"' apps/${{ inputs.environment }}/{{ name }}/values.yaml
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: env-gitops
+          title: "Promote {{ name }} to ${{ inputs.environment }} (${{ inputs.image_tag }})"
+          branch: promote/{{ name }}/${{ inputs.environment }}/${{ inputs.image_tag }}
+          commit-message: "Promote {{ name }} to ${{ inputs.environment }}: ${{ inputs.image_tag }}"
