@@ -21,7 +21,7 @@ catalog:
   rules:
     - allow: [Component, API, Resource, System, Domain, Group, User, Template, Location]
   locations:
-    # PoC: keep only static locations; github-discovery requires extra backend module wiring
+    # Remove github-discovery for PoC (requires additional backend module wiring)
     - type: url
       target: https://github.com/${GITHUB_ORG}/${PLATFORM_REPO}/blob/main/templates/backstage/catalog/locations.yaml
 
