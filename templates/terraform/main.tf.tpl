@@ -1,6 +1,11 @@
 terraform {
   required_version = ">= 1.7.0"
-
+  backend "azurerm" {
+      resource_group_name  = "idp-tfstate-rg"
+      storage_account_name = "idppoctfstate12345"
+      container_name       = "tfstate"
+      key                  = "platform-poc.tfstate"
+    }
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -43,10 +48,11 @@ resource "azurerm_storage_account" "sa" {
 }
 
 resource "azurerm_storage_container" "techdocs" {
-  name                  = "${TECHDOCS_CONTAINER}"
-  storage_account_name  = azurerm_storage_account.sa.name
+  name                 = var.container_name
+  storage_account_id   = azurerm_storage_account.sa.id
   container_access_type = "private"
 }
+
 
 data "azurerm_client_config" "current" {}
 
