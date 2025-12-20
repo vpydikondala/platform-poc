@@ -57,9 +57,50 @@ git checkout main || git checkout -b main
 mkdir -p argocd/apps apps/dev apps/prod
 
 # Copy rendered baseline files into env-gitops repo
-cp -f "$REPO_ROOT/rendered/env-gitops/argocd/root-app.yaml" "argocd/root-app.yaml"
-cp -f "$REPO_ROOT/rendered/env-gitops/argocd/apps/apps-dev.yaml" "argocd/apps/apps-dev.yaml"
-cp -f "$REPO_ROOT/rendered/env-gitops/argocd/apps/apps-prod.yaml" "argocd/apps/apps-prod.yaml"
+# --- Locate rendered GitOps baseline files ---
+CANDIDATES=(
+  "$REPO_ROOT/rendered/env-gitops/argocd"
+  "$REPO_ROOT/rendered/argocd"
+  "$REPO_ROOT/rendered/env-gitops"
+  "$REPO_ROOT/rendered"
+)
+
+FOUND_DIR=""
+for d in "${CANDIDATES[@]}"; do
+  if [[ -f "$d/root-app.yaml" ]] || [[ -f "$d/argocd/root-app.yaml" ]]; then
+    FOUND_DIR="$d"
+    break
+  fi
+done
+
+echo "DEBUG: rendered tree (top levels):"
+ls -la "$REPO_ROOT/rendered" || true
+find "$REPO_ROOT/rendered" -maxdepth 4 -type f | sed -n '1,200p' || true
+
+if [[ -z "$FOUND_DIR" ]]; then
+  echo "ERROR: Could not find rendered root-app.yaml under rendered/. Check templates and render output paths."
+  exit 1
+fi
+
+echo "Using rendered GitOps dir: $FOUND_DIR"
+
+# Normalize: support both layouts
+if [[ -f "$FOUND_DIR/root-app.yaml" ]]; then
+  SRC_ROOT="$FOUND_DIR"
+  SRC_APPS="$FOUND_DIR/apps"
+elif [[ -f "$FOUND_DIR/argocd/root-app.yaml" ]]; then
+  SRC_ROOT="$FOUND_DIR/argocd"
+  SRC_APPS="$FOUND_DIR/argocd/apps"
+else
+  echo "ERROR: Unexpected rendered layout in $FOUND_DIR"
+  exit 1
+fi
+
+# Copy rendered baseline files into env-gitops repo
+cp -f "$SRC_ROOT/root-app.yaml" "argocd/root-app.yaml"
+cp -f "$SRC_APPS/apps-dev.yaml" "argocd/apps/apps-dev.yaml"
+cp -f "$SRC_APPS/apps-prod.yaml" "argocd/apps/apps-prod.yaml"
+
 
 touch apps/dev/.gitkeep apps/prod/.gitkeep
 
