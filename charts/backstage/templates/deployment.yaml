@@ -17,6 +17,8 @@ spec:
       containers:
         - name: backstage
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+
           ports:
             - containerPort: 7007
           envFrom:
