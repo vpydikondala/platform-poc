@@ -21,8 +21,7 @@ catalog:
   rules:
     - allow: [Component, API, Resource, System, Domain, Group, User, Template, Location]
   locations:
-    - type: github-discovery
-      target: https://github.com/${GITHUB_ORG}/*/blob/main/catalog-info.yaml
+    # PoC: keep only static locations; github-discovery requires extra backend module wiring
     - type: url
       target: https://github.com/${GITHUB_ORG}/${PLATFORM_REPO}/blob/main/templates/backstage/catalog/locations.yaml
 
@@ -34,6 +33,9 @@ techdocs:
     type: azureBlobStorage
     azureBlobStorage:
       containerName: ${TECHDOCS_CONTAINER}
+      credentials:
+        accountName: ${TECHDOCS_STORAGE_ACCOUNT}
+        accountKey: ${TECHDOCS_STORAGE_KEY}
 
 argocd:
   appLocatorMethods:
