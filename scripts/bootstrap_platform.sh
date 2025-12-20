@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 bash ./scripts/load_env.sh poc.env
+: "${ARGOCD_NAMESPACE:=argocd}"
+: "${BACKSTAGE_NAMESPACE:=platform}"
+: "${ARGOCD_RELEASE:=argocd}"
+: "${BACKSTAGE_SERVICE_NAME:=backstage}"
 bash ./scripts/render.sh templates rendered
 kubectl create ns ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
 kubectl create ns cert-manager --dry-run=client -o yaml | kubectl apply -f -
