@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
-./scripts/load_env.sh poc.env
+bash ./scripts/load_env.sh poc.env
 if [[ ! -d "env-gitops/.git" ]]; then
   echo "Expected env-gitops repo checked out at ./env-gitops"
   exit 1
 fi
-./scripts/render.sh templates rendered
+bash ./scripts/render.sh templates rendered
 rsync -a --delete rendered/gitops-seed/ env-gitops/
 pushd env-gitops >/dev/null
 git config user.email "actions@github.com"

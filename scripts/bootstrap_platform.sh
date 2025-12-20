@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-./scripts/load_env.sh poc.env
-./scripts/render.sh templates rendered
+bash ./scripts/load_env.sh poc.env
+bash ./scripts/render.sh templates rendered
 kubectl create ns ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
 kubectl create ns cert-manager --dry-run=client -o yaml | kubectl apply -f -
 kubectl create ns "${ARGOCD_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -

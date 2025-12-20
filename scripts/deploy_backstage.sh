@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-./scripts/load_env.sh poc.env
+bash ./scripts/load_env.sh poc.env
 if [[ -z "${INGRESS_IP:-}" ]]; then
   echo "INGRESS_IP is not set."
   exit 1
