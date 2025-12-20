@@ -16,7 +16,7 @@ jobs:
       - name: Checkout env-gitops
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/env-gitops
+          repository: ${{ env.GITHUB_ORG }}/${{ env.GITOPS_REPO }}
           token: ${{ secrets.GITOPS_TOKEN }}
           path: env-gitops
       - uses: azure/login@v2
