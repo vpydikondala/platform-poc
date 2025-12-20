@@ -1,16 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bash ./scripts/load_env.sh poc.env
-bash ./scripts/render.sh templates rendered
+# Always run relative to repo root (this script lives in scripts/)
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
+# Use poc.env if present, else fall back to example
+ENV_FILE="$REPO_ROOT/poc.env"
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "poc.env not found at repo root; using poc.env.example"
+  ENV_FILE="$REPO_ROOT/poc.env.example"
+fi
+
+bash "$REPO_ROOT/scripts/load_env.sh" "$ENV_FILE"
+bash "$REPO_ROOT/scripts/render.sh" "$REPO_ROOT/templates" "$REPO_ROOT/rendered"
+
+# Hard fail if still missing
 : "${GITHUB_ORG:?Missing GITHUB_ORG}"
 : "${GITOPS_REPO:?Missing GITOPS_REPO}"
 : "${GITOPS_TOKEN:?Missing GITOPS_TOKEN}"
 
-WORKDIR="$(pwd)/env-gitops"
+echo "Seeding GitOps repo: ${GITHUB_ORG}/${GITOPS_REPO}"
 
-# Fresh clone of env-gitops using token (avoid pushing to platform repo by mistake)
+WORKDIR="$REPO_ROOT/env-gitops"
+
+# Clone env-gitops using PAT (avoid pushing to platform repo by mistake)
 rm -rf "$WORKDIR"
 git clone "https://${GITOPS_TOKEN}@github.com/${GITHUB_ORG}/${GITOPS_REPO}.git" "$WORKDIR"
 
@@ -21,11 +35,12 @@ git checkout main || git checkout -b main
 mkdir -p argocd/apps apps/dev apps/prod
 
 # Copy rendered baseline files into env-gitops repo
-cp -f ../rendered/env-gitops/argocd/root-app.yaml argocd/root-app.yaml
-cp -f ../rendered/env-gitops/argocd/apps/apps-dev.yaml argocd/apps/apps-dev.yaml
-cp -f ../rendered/env-gitops/argocd/apps/apps-prod.yaml argocd/apps/apps-prod.yaml
+# NOTE: these paths assume your render outputs are here; adjust if needed
+cp -f "$REPO_ROOT/rendered/env-gitops/argocd/root-app.yaml" "argocd/root-app.yaml"
+cp -f "$REPO_ROOT/rendered/env-gitops/argocd/apps/apps-dev.yaml" "argocd/apps/apps-dev.yaml"
+cp -f "$REPO_ROOT/rendered/env-gitops/argocd/apps/apps-prod.yaml" "argocd/apps/apps-prod.yaml"
 
-# Add .gitkeep so empty folders persist
+# Keep empty dirs
 touch apps/dev/.gitkeep apps/prod/.gitkeep
 
 # Commit and push
