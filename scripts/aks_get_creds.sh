@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+: "${PREFIX:="idp-poc"}"
 set -euo pipefail
 bash ./scripts/load_env.sh poc.env
 RG="${PREFIX}-rg"
