@@ -19,7 +19,7 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx -n ingress-ngin
 
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
-helm upgrade --install cert-manager jetstack/cert-manager -n cert-manager -f rendered/helm-values/cert-manager.yaml --set crds.enabled=true
+helm upgrade --install cert-manager jetstack/cert-manager -n cert-manager -f rendered/helm-values/cert-manager.yaml --set crds.enabled=true --atomic --timeout 10m --force
 
 kubectl apply -f rendered/k8s/clusterissuer.yaml
 
