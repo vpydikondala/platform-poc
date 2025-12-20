@@ -1,38 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Always run relative to repo root (this script lives in scripts/)
+# Always run relative to repo root
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-# Choose env file
+# Ensure envsubst exists (GitHub runner usually has it, but keep it safe)
+if ! command -v envsubst >/dev/null 2>&1; then
+  echo "envsubst not found. Install gettext-base (recommended in workflow)."
+  exit 1
+fi
+
+# Use poc.env if present, else fall back to example
 ENV_FILE="$REPO_ROOT/poc.env"
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "poc.env not found; using poc.env.example"
   ENV_FILE="$REPO_ROOT/poc.env.example"
 fi
 
-# Normalize line endings if file was created on Windows (safe no-op on Linux)
-# This prevents subtle 'source' issues due to CRLF
+# Normalize CRLF just in case (safe on Linux)
 sed -i 's/\r$//' "$ENV_FILE" || true
 
-# Load + export variables (do NOT rely on load_env.sh exporting)
+# Load and export variables
 set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
 
-# Validate required core vars
+# Validate required vars
 for v in PREFIX LOCATION GITHUB_ORG PLATFORM_REPO GITOPS_REPO EMAIL; do
   if [[ -z "${!v:-}" ]]; then
     echo "Missing required var: $v (from $ENV_FILE)"
-    echo "DEBUG: Showing lines containing $v:"
-    grep -n "^${v}=" "$ENV_FILE" || true
     exit 1
   fi
 done
 
-# Validate token passed from workflow
 if [[ -z "${GITOPS_TOKEN:-}" ]]; then
   echo "Missing required var: GITOPS_TOKEN (must be passed from workflow env)"
   exit 1
@@ -42,9 +44,19 @@ echo "Loaded env from: $ENV_FILE"
 echo "GITHUB_ORG=$GITHUB_ORG"
 echo "GITOPS_REPO=$GITOPS_REPO"
 
-# Render templates
-bash "$REPO_ROOT/scripts/render.sh" "$REPO_ROOT/templates" "$REPO_ROOT/rendered"
+# Paths to seed templates
+ROOT_TPL="$REPO_ROOT/templates/gitops-seed/argocd/root-app.yaml.tpl"
+DEV_TPL="$REPO_ROOT/templates/gitops-seed/argocd/apps/apps-dev.yaml.tpl"
+PROD_TPL="$REPO_ROOT/templates/gitops-seed/argocd/apps/apps-prod.yaml.tpl"
 
+for f in "$ROOT_TPL" "$DEV_TPL" "$PROD_TPL"; do
+  if [[ ! -f "$f" ]]; then
+    echo "Missing seed template: $f"
+    exit 1
+  fi
+done
+
+# Clone env-gitops using PAT (avoid pushing to platform repo by mistake)
 WORKDIR="$REPO_ROOT/env-gitops"
 rm -rf "$WORKDIR"
 
@@ -54,56 +66,19 @@ git clone "https://${GITOPS_TOKEN}@github.com/${GITHUB_ORG}/${GITOPS_REPO}.git" 
 cd "$WORKDIR"
 git checkout main || git checkout -b main
 
+# Ensure folders exist
 mkdir -p argocd/apps apps/dev apps/prod
 
-# Copy rendered baseline files into env-gitops repo
-# --- Locate rendered GitOps baseline files ---
-CANDIDATES=(
-  "$REPO_ROOT/rendered/env-gitops/argocd"
-  "$REPO_ROOT/rendered/argocd"
-  "$REPO_ROOT/rendered/env-gitops"
-  "$REPO_ROOT/rendered"
-)
+# Render templates into env-gitops repo
+echo "Rendering GitOps seed templates into env-gitops..."
+envsubst < "$ROOT_TPL" > "argocd/root-app.yaml"
+envsubst < "$DEV_TPL"  > "argocd/apps/apps-dev.yaml"
+envsubst < "$PROD_TPL" > "argocd/apps/apps-prod.yaml"
 
-FOUND_DIR=""
-for d in "${CANDIDATES[@]}"; do
-  if [[ -f "$d/root-app.yaml" ]] || [[ -f "$d/argocd/root-app.yaml" ]]; then
-    FOUND_DIR="$d"
-    break
-  fi
-done
-
-echo "DEBUG: rendered tree (top levels):"
-ls -la "$REPO_ROOT/rendered" || true
-find "$REPO_ROOT/rendered" -maxdepth 4 -type f | sed -n '1,200p' || true
-
-if [[ -z "$FOUND_DIR" ]]; then
-  echo "ERROR: Could not find rendered root-app.yaml under rendered/. Check templates and render output paths."
-  exit 1
-fi
-
-echo "Using rendered GitOps dir: $FOUND_DIR"
-
-# Normalize: support both layouts
-if [[ -f "$FOUND_DIR/root-app.yaml" ]]; then
-  SRC_ROOT="$FOUND_DIR"
-  SRC_APPS="$FOUND_DIR/apps"
-elif [[ -f "$FOUND_DIR/argocd/root-app.yaml" ]]; then
-  SRC_ROOT="$FOUND_DIR/argocd"
-  SRC_APPS="$FOUND_DIR/argocd/apps"
-else
-  echo "ERROR: Unexpected rendered layout in $FOUND_DIR"
-  exit 1
-fi
-
-# Copy rendered baseline files into env-gitops repo
-cp -f "$SRC_ROOT/root-app.yaml" "argocd/root-app.yaml"
-cp -f "$SRC_APPS/apps-dev.yaml" "argocd/apps/apps-dev.yaml"
-cp -f "$SRC_APPS/apps-prod.yaml" "argocd/apps/apps-prod.yaml"
-
-
+# Keep empty env folders tracked
 touch apps/dev/.gitkeep apps/prod/.gitkeep
 
+# Commit and push
 git config user.email "actions@github.com"
 git config user.name "github-actions"
 

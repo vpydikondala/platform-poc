@@ -13,13 +13,14 @@ jobs:
       POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-      - name: Create poc.env from example
+      - name: Install envsubst
+        run: sudo apt-get update && sudo apt-get install -y gettext-base
+      - name: Create poc.env
         run: cp poc.env.example poc.env
       - name: Seed GitOps baseline
         run: bash scripts/seed_gitops.sh
         env:
           GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
