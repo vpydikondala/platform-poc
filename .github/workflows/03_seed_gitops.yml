@@ -13,12 +13,11 @@ jobs:
       POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-      - name: Checkout env-gitops
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.GITHUB_ORG }}/${{ env.GITOPS_REPO }}
-          token: ${{ secrets.GITOPS_TOKEN }}
-          path: env-gitops
+      - name: Seed GitOps baseline
+        run: bash scripts/seed_gitops.sh
+        env:
+          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
