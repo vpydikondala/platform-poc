@@ -14,11 +14,15 @@ jobs:
       BACKSTAGE_GITHUB_TOKEN: ${{ secrets.BACKSTAGE_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - name: Download infra outputs
-        uses: actions/download-artifact@v4
+      - name: Download infra outputs from workflow 01
+        uses: dawidd6/action-download-artifact@v3
         with:
+          workflow: 01_infra_apply.yml
+          workflow_conclusion: success
           name: infra-outputs
           path: artifacts
+          branch: main
+
       - name: Load infra outputs
         run: |
           set -a
