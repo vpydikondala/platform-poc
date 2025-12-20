@@ -48,7 +48,7 @@ resource "azurerm_storage_account" "sa" {
 }
 
 resource "azurerm_storage_container" "techdocs" {
-  name                 = var.container_name
+  name                  = "${TECHDOCS_CONTAINER}"
   storage_account_id   = azurerm_storage_account.sa.id
   container_access_type = "private"
 }
