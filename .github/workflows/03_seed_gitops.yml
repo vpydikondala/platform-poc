@@ -13,6 +13,8 @@ jobs:
       POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+      - name: Create poc.env from example
+        run: cp poc.env.example poc.env
       - name: Seed GitOps baseline
         run: bash scripts/seed_gitops.sh
         env:
