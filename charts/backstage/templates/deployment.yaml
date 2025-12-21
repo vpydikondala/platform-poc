@@ -6,7 +6,8 @@ metadata:
 spec:
   replicas: 1
   selector:
-    matchLabels: { app: backstage }
+    matchLabels:
+      app: backstage
   template:
     metadata:
       labels:
@@ -18,7 +19,6 @@ spec:
         - name: backstage
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
-
           ports:
             - containerPort: 7007
           envFrom:

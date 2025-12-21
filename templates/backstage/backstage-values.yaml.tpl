@@ -20,3 +20,9 @@ env:
   POSTGRES_DB: backstage
 
   BACKSTAGE_AUTH_MODE: ${BACKSTAGE_AUTH_MODE}
+
+  techdocs:
+  storageAccount: ${TECHDOCS_STORAGE_ACCOUNT}
+  storageKey: ${TECHDOCS_STORAGE_KEY}
+  container: ${TECHDOCS_CONTAINER}
+

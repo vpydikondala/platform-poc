@@ -24,17 +24,16 @@ auth:
 
 integrations:
   github:
-    - host: github.com
-      token: ${GITHUB_TOKEN}
+  - host: github.com
+    token: ${GITHUB_TOKEN}
 
 catalog:
   rules:
-    - allow: [Component, API, Resource, System, Domain, Group, User, Template, Location]
+  - allow: [ Component, API, Resource, System, Domain, Group, User, Template, Location ]
   locations:
-    - type: github-discovery
-      target: https://github.com/${GITHUB_ORG}/*/blob/main/catalog-info.yaml
-    - type: url
-      target: https://github.com/${GITHUB_ORG}/${PLATFORM_REPO}/blob/main/templates/backstage/catalog/locations.yaml
+  # github-discovery REMOVED because your backend image does not include GithubDiscoveryProcessor
+  - type: url
+    target: https://github.com/${GITHUB_ORG}/${PLATFORM_REPO}/blob/main/templates/backstage/catalog/locations.yaml
 
 techdocs:
   builder: local
@@ -44,10 +43,13 @@ techdocs:
     type: azureBlobStorage
     azureBlobStorage:
       containerName: ${TECHDOCS_CONTAINER}
+      credentials:
+        accountName: ${TECHDOCS_STORAGE_ACCOUNT}
+        accountKey: ${TECHDOCS_STORAGE_KEY}
 
 argocd:
   appLocatorMethods:
-    - type: config
-      instances:
-        - name: argo
-          url: ${ARGOCD_URL}
+  - type: config
+    instances:
+    - name: argo
+      url: ${ARGOCD_URL}
