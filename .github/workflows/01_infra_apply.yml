@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+      # Backstage auth (Microsoft Entra ID) - create these repo secrets
+      BACKSTAGE_AZURE_TENANT_ID: ${{ secrets.BACKSTAGE_AZURE_TENANT_ID }}
+      BACKSTAGE_AZURE_AUTH_CLIENT_ID: ${{ secrets.BACKSTAGE_AZURE_AUTH_CLIENT_ID }}
+      BACKSTAGE_AZURE_AUTH_CLIENT_SECRET: ${{ secrets.BACKSTAGE_AZURE_AUTH_CLIENT_SECRET }}
+      BACKEND_AUTH_SECRET: ${{ secrets.BACKEND_AUTH_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
@@ -20,7 +25,25 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - uses: hashicorp/setup-terraform@v3
       - name: Create poc.env
-        run: cp poc.env.example poc.env
+        run: |
+          cp poc.env.example poc.env
+
+          # Provide Backstage auth settings (Microsoft Entra ID) via env vars consumed by templates
+          if [ -n "${BACKSTAGE_AZURE_TENANT_ID}" ]; then
+            echo "AZURE_TENANT_ID=${BACKSTAGE_AZURE_TENANT_ID}" >> poc.env
+          fi
+          if [ -n "${BACKSTAGE_AZURE_AUTH_CLIENT_ID}" ]; then
+            echo "AZURE_AUTH_CLIENT_ID=${BACKSTAGE_AZURE_AUTH_CLIENT_ID}" >> poc.env
+          fi
+          if [ -n "${BACKSTAGE_AZURE_AUTH_CLIENT_SECRET}" ]; then
+            echo "AZURE_AUTH_CLIENT_SECRET=${BACKSTAGE_AZURE_AUTH_CLIENT_SECRET}" >> poc.env
+          fi
+
+          # Backend auth secret: prefer repo secret BACKEND_AUTH_SECRET; otherwise generate one
+          if [ -z "${BACKEND_AUTH_SECRET}" ]; then
+            BACKEND_AUTH_SECRET=$(openssl rand -base64 48 | tr -d '\n')
+          fi
+          echo "BACKEND_AUTH_SECRET=${BACKEND_AUTH_SECRET}" >> poc.env
       - name: Render Terraform
         run: bash scripts/render.sh templates rendered
       - name: Terraform init/apply
@@ -38,6 +61,7 @@ jobs:
               "AKS_NAME=" + .aks_name.value,
               "ACR_NAME=" + .acr_name.value,
               "STORAGE_ACCOUNT=" + .storage_account.value,
+              "STORAGE_ACCOUNT_KEY=" + .storage_account_key.value,
               "BACKSTAGE_MI_CLIENT_ID=" + .backstage_mi_client_id.value,
               "POSTGRES_FQDN=" + .postgres_fqdn.value,
               "POSTGRES_DB=" + .postgres_db.value,
