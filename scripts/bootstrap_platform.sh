@@ -18,13 +18,18 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   --create-namespace
 
 # Install cert-manager
+echo "Installing cert-manager..."
+
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
+kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+
 helm upgrade --install cert-manager jetstack/cert-manager \
   --namespace cert-manager \
-  --create-namespace \
-  --set installCRDs=true
+  --set installCRDs=true \
+  --set webhook.namespaceSelector=null \
+  --wait
 
 # Install Argo CD
 helm repo add argo https://argoproj.github.io/argo-helm
