@@ -69,10 +69,14 @@ jobs:
         run: bash scripts/apply_ingresses.sh
         env:
           INGRESS_IP: ${{ env.INGRESS_IP }}
+
       - name: Build & Push Backstage Image
         run: |
+          echo "Logging in to ACR..."
           az acr login --name $ACR_NAME
+          echo "Building Backstage Docker image..."
           docker build -t $ACR_NAME.azurecr.io/backstage:latest -f packages/backend/Dockerfile .
+          echo "Pushing Backstage image to ACR..."
           docker push $ACR_NAME.azurecr.io/backstage:latest
 
       - name: Render Backstage Helm values
@@ -81,7 +85,6 @@ jobs:
           source poc.env
           source artifacts/infra.outputs.env
           set +a
-          # Set environment variables needed for Backstage Helm chart
           export INGRESS_IP="${{ env.INGRESS_IP }}"
           export POSTGRES_HOST="$POSTGRES_FQDN"
           export POSTGRES_USER="$POSTGRES_ADMIN_USER"
