@@ -1,50 +1,49 @@
-# Stage 1: Build
+# Stage 1: Builder
 FROM node:18-alpine AS builder
+
 WORKDIR /app
 
-# Copy root package.json, yarn.lock, and workspace package.json files
+# Copy root package.json and yarn.lock
 COPY package.json yarn.lock ./
-COPY packages/app/package.json packages/app/package.json
-COPY packages/backend/package.json packages/backend/package.json
-COPY plugins/ plugins/
 
-# Install dependencies
+# Install root dependencies
 RUN yarn install --frozen-lockfile
 
-# Copy full source code
-COPY . .
+# Copy backend and app package.json separately
+COPY packages/backend/package.json packages/backend/package.json
+COPY packages/app/package.json packages/app/package.json
 
-# Build backend and frontend
-RUN yarn workspace backend build
-RUN yarn workspace app build
+# Copy the plugins folder, even if empty
+COPY plugins/ plugins/
 
-# Stage 2: Production
+# Copy remaining source code
+COPY packages/backend/ packages/backend/
+COPY packages/app/ packages/app/
+
+# Optional: if you have other directories like plugins/<plugin_name>/, copy them as needed
+# COPY plugins/<plugin_name>/ plugins/<plugin_name>/
+
+# Install dependencies for backend and app
+RUN yarn workspace backend install && yarn workspace app install
+
+# Build the backend and app
+RUN yarn workspace backend build && yarn workspace app build
+
+# Stage 2: Production image
 FROM node:18-alpine
+
 WORKDIR /app
 
-# Copy built artifacts from builder
-COPY --from=builder /app .
+# Copy built code from builder
+COPY --from=builder /app/packages/backend /app/packages/backend
+COPY --from=builder /app/packages/app /app/packages/app
+COPY --from=builder /app/plugins /app/plugins
 
-# Expose Backstage backend port
-EXPOSE 7000
+# Install production dependencies only
+RUN yarn install --production --frozen-lockfile
 
-# Set environment variables for production
-ENV NODE_ENV=production
+# Expose Backstage port
+EXPOSE 7007
 
-# Recommended: let the container read OIDC and DB variables from env at runtime
-# These will be provided via Helm values/envsubst in your workflow
-ENV BACKSTAGE_AUTH_MODE=oidc
-ENV AZURE_CLIENT_ID=""
-ENV AZURE_TENANT_ID=""
-ENV BACKSTAGE_HOST=""
-ENV POSTGRES_HOST=""
-ENV POSTGRES_USER=""
-ENV POSTGRES_PASSWORD=""
-ENV POSTGRES_DB=backstage
-ENV TECHDOCS_STORAGE_ACCOUNT=""
-ENV TECHDOCS_STORAGE_KEY=""
-ENV TECHDOCS_CONTAINER=techdocs
-ENV GITHUB_TOKEN=""
-
-# Start the backend
+# Start Backstage
 CMD ["node", "packages/backend/dist/index.js"]
