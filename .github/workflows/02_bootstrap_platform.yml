@@ -1,4 +1,5 @@
 name: 02 - Bootstrap Platform (Helm + Ingress + Backstage)
+
 on:
   workflow_dispatch:
 
@@ -14,6 +15,7 @@ jobs:
       BACKSTAGE_GITHUB_TOKEN: ${{ secrets.BACKSTAGE_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Download infra outputs from workflow 01
         uses: dawidd6/action-download-artifact@v3
         with:
@@ -22,6 +24,7 @@ jobs:
           name: infra-outputs
           path: artifacts
           branch: main
+
       - name: Load infra outputs
         run: |
           set -a
@@ -35,35 +38,45 @@ jobs:
           echo "POSTGRES_FQDN=$POSTGRES_FQDN" >> $GITHUB_ENV
           echo "POSTGRES_DB=$POSTGRES_DB" >> $GITHUB_ENV
           echo "POSTGRES_ADMIN_USER=$POSTGRES_ADMIN_USER" >> $GITHUB_ENV
+
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - uses: azure/setup-kubectl@v4
       - uses: azure/setup-helm@v4
+
       - name: Create poc.env
         run: cp poc.env.example poc.env
+
       - name: Render base templates
         run: bash scripts/render.sh templates rendered
-      - name: Get AKS creds
+
+      - name: Get AKS credentials
         run: |
           az aks get-credentials -g "$RG_NAME" -n "$AKS_NAME" --overwrite-existing
           kubectl get nodes
+
       - name: Install platform components
         run: bash scripts/bootstrap_platform.sh
+
       - name: Wait for ingress IP
         run: bash scripts/wait_for_ingress_ip.sh
-      - name: Apply Argo + Backstage ingresses/certs
+
+      - name: Apply Argo CD + Backstage ingresses/certs
         run: bash scripts/apply_ingresses.sh
         env:
           INGRESS_IP: ${{ env.INGRESS_IP }}
+
       - name: Render Backstage Helm values
         run: |
           set -a
           source poc.env
           source artifacts/infra.outputs.env
           set +a
+          # Set environment variables needed for Backstage Helm chart
           export INGRESS_IP="${{ env.INGRESS_IP }}"
           export POSTGRES_HOST="$POSTGRES_FQDN"
           export POSTGRES_USER="$POSTGRES_ADMIN_USER"
@@ -74,10 +87,12 @@ jobs:
           export BACKSTAGE_GITHUB_TOKEN="$BACKSTAGE_GITHUB_TOKEN"
           mkdir -p rendered/backstage
           envsubst < templates/backstage/backstage-values.yaml.tpl > rendered/backstage/backstage-values.yaml
+
       - name: Deploy Backstage
         run: bash scripts/deploy_backstage.sh
         env:
           INGRESS_IP: ${{ env.INGRESS_IP }}
+
       - name: Print URLs
         run: |
           source poc.env

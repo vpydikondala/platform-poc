@@ -1,6 +1,7 @@
 image:
-  repository: ${BACKSTAGE_IMAGE}
-  tag: ${BACKSTAGE_IMAGE_TAG}
+  repository: ${ACR_NAME}.azurecr.io/backstage
+  tag: latest
+  pullPolicy: Always
 
 serviceAccount:
   name: backstage-sa
@@ -15,20 +16,20 @@ env:
   GITHUB_ORG: ${GITHUB_ORG}
   GITHUB_TOKEN: ${BACKSTAGE_GITHUB_TOKEN}
 
-  # TechDocs storage
+  # TechDocs (Azure Blob)
   TECHDOCS_STORAGE_ACCOUNT: ${STORAGE_ACCOUNT}
   TECHDOCS_CONTAINER: ${TECHDOCS_CONTAINER}
   TECHDOCS_STORAGE_KEY: ${TECHDOCS_STORAGE_KEY}
 
-  # Postgres DB
+  # Postgres
   POSTGRES_HOST: ${POSTGRES_HOST}
   POSTGRES_USER: ${POSTGRES_USER}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
   POSTGRES_DB: ${POSTGRES_DB}
 
-  # Backstage authentication mode
-  BACKSTAGE_AUTH_MODE: ${BACKSTAGE_AUTH_MODE}
-
-  # Optional: Azure OIDC secrets (used by app-config.yaml)
+  # Azure Auth (AAD login)
   AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
   AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+
+  # Backstage
+  NODE_ENV: production
