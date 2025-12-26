@@ -82,7 +82,7 @@ spec:
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
-        catalogInfoPath: catalog-info.yaml
+        catalogInfoPath: ../../packages/backend/catalog-info.yaml
 
   output:
     links:

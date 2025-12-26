@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
-      # Backstage auth (Microsoft Entra ID) - create these repo secrets
       BACKSTAGE_AZURE_TENANT_ID: ${{ secrets.BACKSTAGE_AZURE_TENANT_ID }}
       BACKSTAGE_AZURE_AUTH_CLIENT_ID: ${{ secrets.BACKSTAGE_AZURE_AUTH_CLIENT_ID }}
       BACKSTAGE_AZURE_AUTH_CLIENT_SECRET: ${{ secrets.BACKSTAGE_AZURE_AUTH_CLIENT_SECRET }}
@@ -27,19 +26,9 @@ jobs:
       - name: Create poc.env
         run: |
           cp poc.env.example poc.env
-
-          # Provide Backstage auth settings (Microsoft Entra ID) via env vars consumed by templates
-          if [ -n "${BACKSTAGE_AZURE_TENANT_ID}" ]; then
-            echo "AZURE_TENANT_ID=${BACKSTAGE_AZURE_TENANT_ID}" >> poc.env
-          fi
-          if [ -n "${BACKSTAGE_AZURE_AUTH_CLIENT_ID}" ]; then
-            echo "AZURE_AUTH_CLIENT_ID=${BACKSTAGE_AZURE_AUTH_CLIENT_ID}" >> poc.env
-          fi
-          if [ -n "${BACKSTAGE_AZURE_AUTH_CLIENT_SECRET}" ]; then
-            echo "AZURE_AUTH_CLIENT_SECRET=${BACKSTAGE_AZURE_AUTH_CLIENT_SECRET}" >> poc.env
-          fi
-
-          # Backend auth secret: prefer repo secret BACKEND_AUTH_SECRET; otherwise generate one
+          echo "AZURE_TENANT_ID=${BACKSTAGE_AZURE_TENANT_ID}" >> poc.env
+          echo "AZURE_AUTH_CLIENT_ID=${BACKSTAGE_AZURE_AUTH_CLIENT_ID}" >> poc.env
+          echo "AZURE_AUTH_CLIENT_SECRET=${BACKSTAGE_AZURE_AUTH_CLIENT_SECRET}" >> poc.env
           if [ -z "${BACKEND_AUTH_SECRET}" ]; then
             BACKEND_AUTH_SECRET=$(openssl rand -base64 48 | tr -d '\n')
           fi

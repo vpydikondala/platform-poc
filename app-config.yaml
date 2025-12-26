@@ -1,0 +1,77 @@
+app:
+  title: Scaffolded Backstage App
+  baseUrl: http://localhost:3000
+
+organization:
+  name: My Company
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+  csp:
+    connect-src: [ "'self'", 'http:', 'https:' ]
+  cors:
+    origin: http://localhost:3000
+    methods: [ GET, HEAD, PATCH, POST, PUT, DELETE ]
+    credentials: true
+  # Development database (in-memory), overridden by production values in Helm
+  database:
+    client: better-sqlite3
+    connection: ':memory:'
+
+integrations:
+  github:
+  - host: github.com
+    token: ${GITHUB_TOKEN}
+
+proxy: # Optional proxy endpoints can be configured here
+
+techdocs:
+  builder: 'local'
+  generator:
+    runIn: 'docker'
+  publisher:
+    type: 'local'
+
+auth:
+  providers:
+    guest: {}
+    azure:
+      development:
+        clientId: "${AZURE_CLIENT_ID}"
+        tenantId: "${AZURE_TENANT_ID}"
+        authorizationUrl: "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/authorize"
+        tokenUrl: "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token"
+        callbackUrl: "https://${BACKSTAGE_HOST}/api/auth/azure/callback"
+      production:
+        clientId: "${AZURE_CLIENT_ID}"
+        tenantId: "${AZURE_TENANT_ID}"
+        authorizationUrl: "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/authorize"
+        tokenUrl: "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token"
+        callbackUrl: "https://${BACKSTAGE_HOST}/api/auth/azure/callback"
+
+scaffolder: # Configure software templates here if needed
+
+catalog:
+  import:
+    entityFilename: packages/backend/catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+  - allow: [ Component, System, API, Resource, Location ]
+  locations:
+  - type: file
+    target: ../../examples/entities.yaml
+  - type: file
+    target: ../../examples/template/template.yaml
+    rules:
+    - allow: [ Template ]
+  - type: file
+    target: ../../examples/org.yaml
+    rules:
+    - allow: [ User, Group ]
+
+kubernetes: # Kubernetes integration settings if required
+
+permission:
+  enabled: true

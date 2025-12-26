@@ -22,7 +22,6 @@ jobs:
           name: infra-outputs
           path: artifacts
           branch: main
-
       - name: Load infra outputs
         run: |
           set -a

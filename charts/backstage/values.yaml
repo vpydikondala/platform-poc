@@ -19,4 +19,7 @@ env:
   POSTGRES_USER: ""
   POSTGRES_PASSWORD: ""
   POSTGRES_DB: "backstage"
-  BACKSTAGE_AUTH_MODE: "guest"
+  BACKSTAGE_AUTH_MODE: "azure_oidc" # previously 'guest'
+  AZURE_CLIENT_ID: "" # Will be injected from GitHub secrets or pipeline
+  AZURE_TENANT_ID: "" # Will be injected from GitHub secrets or pipeline
+  AZURE_SUBSCRIPTION_ID: "" # Optional if needed for AKS Workload Identity
