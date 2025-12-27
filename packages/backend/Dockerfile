@@ -1,8 +1,9 @@
 # Stage 1: Builder
 FROM node:18-alpine AS builder
 
-# Remove pre-installed Yarn and install Yarn v1 (matches your yarn.lock)
-RUN rm -f /usr/local/bin/yarn && npm install -g yarn@1.22.22
+# Remove pre-installed Yarn completely and install Yarn v1
+RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+    && npm install -g yarn@1.22.22
 
 WORKDIR /app
 
@@ -16,7 +17,7 @@ RUN yarn install --frozen-lockfile
 COPY packages/backend/package.json packages/backend/package.json
 COPY packages/app/package.json packages/app/package.json
 
-# Copy the plugins folder from repo root
+# Copy plugins folder from repo root
 COPY plugins/ plugins/
 
 # Copy remaining source code
@@ -39,8 +40,9 @@ COPY --from=builder /app/packages/backend /app/packages/backend
 COPY --from=builder /app/packages/app /app/packages/app
 COPY --from=builder /app/plugins /app/plugins
 
-# Install production dependencies only
-RUN rm -f /usr/local/bin/yarn && npm install -g yarn@1.22.22 \
+# Install Yarn v1 in production image
+RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+    && npm install -g yarn@1.22.22 \
     && yarn install --production --frozen-lockfile
 
 # Expose Backstage port
