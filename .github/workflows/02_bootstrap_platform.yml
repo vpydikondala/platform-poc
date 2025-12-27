@@ -83,17 +83,40 @@ jobs:
             ${{ runner.os }}-yarn-
 
       # Build & Push Backstage Docker Image (BuildKit cache disabled)
+      # -------------------
+# Build & Push Backstage Docker Image with Docker layer caching
       - name: Build & Push Backstage Image
         run: |
           echo "Logging in to ACR..."
           az acr login -n $ACR_NAME
 
-          # Disable BuildKit caching to avoid GitHub Actions error
-          DOCKER_BUILDKIT=0 docker build \
+          # Enable BuildKit caching directory
+          mkdir -p /tmp/.buildx-cache
+
+          # Build Docker image with local caching
+          DOCKER_BUILDKIT=1 docker build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
             -t $ACR_NAME.azurecr.io/backstage:latest \
             -f packages/backend/Dockerfile .
 
+          # Update cache for next run
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+          # Push the image
           docker push $ACR_NAME.azurecr.io/backstage:latest
+
+      # -------------------
+      # Optional: Cache Docker layers between workflow runs
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
 
       - name: Render Backstage Helm values
         run: |
