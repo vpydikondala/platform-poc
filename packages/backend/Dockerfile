@@ -1,17 +1,16 @@
 # Stage 1: Builder
 FROM node:18-alpine AS builder
 
-# Enable Corepack and Yarn 3.5.1
-RUN corepack enable && corepack prepare yarn@3.5.1 --activate
-
+# Install Yarn v1 (matches your yarn.lock)
+RUN npm install -g yarn@1.22.22
 
 WORKDIR /app
 
 # Copy root package.json and yarn.lock
 COPY package.json yarn.lock ./
 
-# Install root dependencies using Yarn 4 immutable mode
-RUN yarn install --immutable
+# Install root dependencies using Yarn v1
+RUN yarn install --frozen-lockfile
 
 # Copy backend and app package.json separately
 COPY packages/backend/package.json packages/backend/package.json
