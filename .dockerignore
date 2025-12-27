@@ -1,8 +1,10 @@
-.git
+# Yarn Berry artifacts - must not go into docker context
+.yarn/unplugged
 .yarn/cache
+.yarn/build-state.yml
 .yarn/install-state.gz
+
+# (optional but recommended)
+.pnp.cjs
+.pnp.loader.mjs
 node_modules
-packages/*/src
-packages/*/node_modules
-#plugins
-*.local.yaml
