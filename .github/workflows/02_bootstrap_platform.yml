@@ -69,12 +69,44 @@ jobs:
         run: bash scripts/apply_ingresses.sh
         env:
           INGRESS_IP: ${{ env.INGRESS_IP }}
+
+      # -------------------
+      # Cache Yarn dependencies
+      - name: Cache Yarn
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.yarn/cache
+            ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      # Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      # Build & Push Backstage Docker Image with BuildKit caching
       - name: Build & Push Backstage Image
         run: |
           echo "Logging in to ACR..."
           az acr login -n $ACR_NAME
-          docker build -t $ACR_NAME.azurecr.io/backstage:latest -f packages/backend/Dockerfile .
+
+          DOCKER_BUILDKIT=1 docker build \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            -t $ACR_NAME.azurecr.io/backstage:latest \
+            -f packages/backend/Dockerfile .
+
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
           docker push $ACR_NAME.azurecr.io/backstage:latest
+
       - name: Render Backstage Helm values
         run: |
           set -a

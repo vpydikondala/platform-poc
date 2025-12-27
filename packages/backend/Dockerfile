@@ -14,8 +14,7 @@ COPY packages/backend/package.json packages/backend/package.json
 COPY packages/app/package.json packages/app/package.json
 
 # Copy the plugins folder, even if empty
-# Copy the plugins folder from repo root
-COPY ../../plugins/ plugins/
+COPY plugins/ plugins/
 
 # Copy remaining source code
 COPY packages/backend/ packages/backend/
