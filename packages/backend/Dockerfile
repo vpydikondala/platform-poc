@@ -1,17 +1,17 @@
 # Stage 1: Builder
 FROM node:24-alpine AS builder
 
-# Remove any existing Yarn and install Yarn v1 (matches your yarn.lock)
+# Remove any existing Yarn and install Yarn v1 (matches your intended yarn.lock version)
 RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \
     && npm install -g yarn@1.22.22
 
 WORKDIR /app
 
-# Copy root package.json and yarn.lock
-COPY package.json yarn.lock ./
+# Copy root package.json (no yarn.lock needed)
+COPY package.json ./
 
-# Install root dependencies using Yarn v1
-RUN yarn install --frozen-lockfile
+# Install root dependencies using Yarn v1 (will generate yarn.lock inside container)
+RUN yarn install
 
 # Copy backend and app package.json separately
 COPY packages/backend/package.json packages/backend/package.json
