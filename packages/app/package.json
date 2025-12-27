@@ -47,7 +47,7 @@
     "react-dom": "^18.0.2",
     "react-router": "^6.3.0",
     "react-router-dom": "^6.3.0",
-    "@roadiehq/backstage-plugin-argo-cd": "^0.4.0"
+    "@backstage-community/plugin-argo-cd": "^0.6.0"
   },
   "devDependencies": {
     "@backstage/test-utils": "^1.7.14",
