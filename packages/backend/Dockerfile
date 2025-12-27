@@ -1,8 +1,9 @@
 # Stage 1: Builder
 FROM node:18-alpine AS builder
 
-# Enable Corepack and Yarn 4
-RUN corepack enable && corepack prepare yarn@4.4.1 --activate
+# Enable Corepack and Yarn 3.5.1
+RUN corepack enable && corepack prepare yarn@3.5.1 --activate
+
 
 WORKDIR /app
 
