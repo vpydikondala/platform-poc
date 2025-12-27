@@ -1,24 +1,32 @@
 # Stage 1: Builder
 FROM node:24-alpine AS builder
 
-# Install Yarn v4 (latest stable) to match Node 24
-RUN npm install -g yarn@4
+# Enable Corepack and activate Yarn 4
+RUN corepack enable \
+  && corepack prepare yarn@4.4.1 --activate
 
 WORKDIR /app
 
-# Copy all package.json files (root + workspaces)
-COPY package.json ./ 
-COPY packages/backend/package.json packages/backend/package.json
-COPY packages/app/package.json packages/app/package.json
-COPY plugins ./plugins
+# Copy root package.json only
+COPY package.json ./
 
-# Install all dependencies (Yarn v4 will generate its own yarn.lock inside container)
+# Install root dependencies (will generate yarn.lock inside container)
 RUN yarn install
 
-# Copy the remaining source code
+# Copy workspace manifests
+COPY packages/backend/package.json packages/backend/package.json
+COPY packages/app/package.json packages/app/package.json
+
+# Copy plugins
+COPY plugins/ plugins/
+
+# Copy remaining source
 COPY packages/backend/ packages/backend/
 COPY packages/app/ packages/app/
 
-# Build backend and app
-RUN yarn workspace backend build
-RUN yarn workspace app build
+# Install workspace deps
+RUN yarn workspaces focus --all
+
+# Build
+RUN yarn workspace backend build \
+ && yarn workspace app build
