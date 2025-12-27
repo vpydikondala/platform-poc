@@ -1,31 +1,24 @@
 # Stage 1: Builder
 FROM node:24-alpine AS builder
 
-# Remove any existing Yarn and install Yarn v1 (matches your intended yarn.lock version)
-RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \
-    && npm install -g yarn@1.22.22
+# Install Yarn v4 (latest stable) to match Node 24
+RUN npm install -g yarn@4
 
 WORKDIR /app
 
-# Copy root package.json (no yarn.lock needed)
-COPY package.json ./
-
-# Install root dependencies using Yarn v1 (will generate yarn.lock inside container)
-RUN yarn install
-
-# Copy backend and app package.json separately
+# Copy all package.json files (root + workspaces)
+COPY package.json ./ 
 COPY packages/backend/package.json packages/backend/package.json
 COPY packages/app/package.json packages/app/package.json
+COPY plugins ./plugins
 
-# Copy plugins folder
-COPY plugins/ plugins/
+# Install all dependencies (Yarn v4 will generate its own yarn.lock inside container)
+RUN yarn install
 
-# Copy remaining source code
+# Copy the remaining source code
 COPY packages/backend/ packages/backend/
 COPY packages/app/ packages/app/
 
-# Install dependencies for backend and app workspaces
-RUN yarn workspace backend install && yarn workspace app install
-
-# Build the backend and app
-RUN yarn workspace backend build && yarn workspace app build
+# Build backend and app
+RUN yarn workspace backend build
+RUN yarn workspace app build
