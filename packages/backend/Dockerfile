@@ -1,10 +1,15 @@
 # ---------- builder ----------
 FROM node:20-bullseye AS builder
 
+# Add the deadsnakes PPA to install newer Python versions
 RUN apt-get update && apt-get install -y \
-    python3.11=3.11.9-1~debian11 \
-    python3.11-dev=3.11.9-1~debian11 \
-    python3.11-distutils=3.11.9-1~debian11 \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y \
+    python3.11 \
+    python3.11-dev \
+    python3.11-distutils \
     make \
     g++ \
     build-essential \
@@ -15,13 +20,16 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
   && rm -rf /var/lib/apt/lists/*
 
+# Set python3.11 as the default Python version
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+
 WORKDIR /app
 
 # (optional) signature so you can confirm CI uses THIS Dockerfile
 RUN echo "DOCKERFILE_SIGNATURE=2025-12-28-v1"
 
 # Copy Yarn Berry files first
-COPY package.json yarn.lock .yarnrc.yml ./
+COPY package.json yarn.lock .yarnrc.yml ./ 
 COPY .yarn/ .yarn/
 
 # Copy workspace manifests BEFORE install
