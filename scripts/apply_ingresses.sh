@@ -8,13 +8,20 @@ if [[ -z "${INGRESS_IP:-}" ]]; then
   exit 1
 fi
 
-# ---- cert-manager guard: fail fast with a clear message ----
+# Defaults (match your bootstrap script)
+: "${BACKSTAGE_NAMESPACE:=platform}"
+: "${ARGOCD_NAMESPACE:=argocd}"
+
+# Ensure namespaces exist
+kubectl get ns "${ARGOCD_NAMESPACE}" >/dev/null 2>&1 || kubectl create ns "${ARGOCD_NAMESPACE}"
+kubectl get ns "${BACKSTAGE_NAMESPACE}" >/dev/null 2>&1 || kubectl create ns "${BACKSTAGE_NAMESPACE}"
+
+# cert-manager guard
 if ! kubectl get crd certificates.cert-manager.io >/dev/null 2>&1; then
   echo "ERROR: cert-manager CRDs not installed (certificates.cert-manager.io missing)."
   echo "Run scripts/bootstrap_platform.sh (cert-manager install) first."
   exit 1
 fi
-# -----------------------------------------------------------
 
 bash ./scripts/render.sh templates rendered
 
