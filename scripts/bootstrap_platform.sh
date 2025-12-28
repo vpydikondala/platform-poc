@@ -17,26 +17,24 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   --namespace ingress-nginx \
   --create-namespace
 
-# Install cert-manager
-echo "Installing cert-manager..."
+# Install cert-manager (only if not already installed)
+echo "Checking cert-manager..."
 
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
+if kubectl get crd certificates.cert-manager.io >/dev/null 2>&1; then
+  echo "cert-manager CRDs already present. Assuming cert-manager is installed/managed. Skipping Helm install."
+else
+  echo "Installing cert-manager via Helm..."
+  helm repo add jetstack https://charts.jetstack.io
+  helm repo update
 
-# Always ensure the namespace exists
-kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+  kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
 
-# Install cert-manager + CRDs
-helm upgrade --install cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --set installCRDs=true
+  helm upgrade --install cert-manager jetstack/cert-manager \
+    --namespace cert-manager \
+    --set installCRDs=true
 
-echo "Waiting for cert-manager deployments..."
-kubectl -n cert-manager rollout status deploy/cert-manager --timeout=180s
-kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=180s
-kubectl -n cert-manager rollout status deploy/cert-manager-cainjector --timeout=180s
-
-echo "cert-manager installed and ready."
+  echo "cert-manager installed."
+fi
 
 # Install Argo CD
 helm repo add argo https://argoproj.github.io/argo-helm
