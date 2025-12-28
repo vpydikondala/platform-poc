@@ -1,10 +1,10 @@
 # ---------- builder ----------
 FROM node:20-bullseye AS builder
 
-RUN apt-get update && apt-get install -y  \
-    python3.11 \
-    python3.11-dev \
-    python3.11-distutils \
+RUN apt-get update && apt-get install -y \
+    python3.11=3.11.9-1~debian11 \
+    python3.11-dev=3.11.9-1~debian11 \
+    python3.11-distutils=3.11.9-1~debian11 \
     make \
     g++ \
     build-essential \
