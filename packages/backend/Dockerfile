@@ -29,12 +29,12 @@ COPY packages/backend/package.json packages/backend/package.json
 COPY plugins/ plugins/
 
 # 3) Clear cache, force rebuild, and install dependencies
-RUN echo "Yarn version: $(yarn -v)" && \
+RUN echo "Yarn version (before install): $(yarn -v)" && \
     rm -rf .yarn/cache .yarn/unplugged .pnp.* && \
     corepack enable && \
     corepack prepare yarn@3.6.4 --activate && \
-    yarn --version && \
-    yarn install --immutable --no-cache --frozen-lockfile --inline-builds
+    echo "Yarn version (after activation): $(yarn -v)" && \
+    yarn install --immutable --frozen-lockfile --inline-builds
 
 # 4) Copy the rest of the source and build
 COPY . .
