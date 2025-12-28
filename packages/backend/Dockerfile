@@ -33,6 +33,7 @@ RUN echo "Yarn version: $(yarn -v)" && \
     rm -rf .yarn/cache .yarn/unplugged .pnp.* && \
     corepack enable && \
     corepack prepare yarn@3.6.4 --activate && \
+    yarn --version && \
     yarn install --immutable --no-cache --frozen-lockfile --inline-builds
 
 # 4) Copy the rest of the source and build
