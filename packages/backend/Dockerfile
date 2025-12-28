@@ -1,5 +1,5 @@
-# ---------- builder ----------
-FROM node:20-bullseye AS builder
+# Use Node 18 as the builder base image (Node 20 causes build issues with isolated-vm)
+FROM node:18-bullseye AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-dev \
@@ -9,34 +9,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
 RUN corepack enable && corepack prepare yarn@3.6.4 --activate
+WORKDIR /app
 
-# Copy Yarn config + lock first
+# Yarn PnP + plugins + lockfile first
 COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn/ .yarn/
+COPY .yarn/plugins .yarn/plugins
+COPY .yarn/plugins .yarn/plugins
 
-# Copy workspace manifests BEFORE install (critical)
-COPY packages/app/package.json packages/app/package.json
-COPY packages/backend/package.json packages/backend/package.json
-# If you have plugins as workspaces, copy their package.json too:
-# COPY plugins/<plugin>/package.json plugins/<plugin>/package.json
+# Install dependencies (allow scripts; native modules will build here)
+RUN yarn install --inline-builds
 
-# Install deps (no --immutable in Docker for now)
-RUN yarn install
+# Copy sources and build
+COPY . . 
+RUN yarn workspace backend build && yarn workspace app build
 
-# Now copy the rest
-COPY . .
+# Use Node 18 for runtime as well (to match the builder version)
+FROM node:18-bullseye-slim
 
-# Build (order doesn’t matter much, but backend build triggers app sometimes)
-RUN yarn workspace backend build
-RUN yarn workspace app build
-
-# ---------- runtime ----------
-FROM node:20-bullseye-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Copy only necessary files from the builder stage
 COPY --from=builder /app /app
 
 EXPOSE 7007
