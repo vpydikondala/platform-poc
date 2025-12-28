@@ -1,6 +1,7 @@
 # ---------- builder ----------
 FROM node:18-bullseye AS builder
 
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-dev \
@@ -9,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
     libssl-dev \
+    libsqlite3-dev \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -23,8 +25,9 @@ COPY packages/backend/package.json packages/backend/package.json
 # If you have local plugins, include them (and their package.json files)
 COPY plugins/ plugins/
 
-# 3) Install deps (Yarn 3: no --force; use --immutable for reproducibility)
-RUN corepack enable \
+# 3) Clear cache and install dependencies
+RUN rm -rf .yarn/cache .yarn/unplugged .pnp.* \
+  && corepack enable \
   && corepack prepare yarn@3.6.4 --activate \
   && yarn install --immutable --inline-builds
 
