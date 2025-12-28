@@ -28,12 +28,12 @@ COPY packages/backend/package.json packages/backend/package.json
 # If you have local plugins, include them (and their package.json files)
 COPY plugins/ plugins/
 
-# 3) Clear cache and install dependencies
+# 3) Clear cache, force rebuild, and install dependencies
 RUN echo "Yarn version: $(yarn -v)" && \
     rm -rf .yarn/cache .yarn/unplugged .pnp.* && \
     corepack enable && \
     corepack prepare yarn@3.6.4 --activate && \
-    yarn install --frozen-lockfile --inline-builds
+    yarn install --no-optional --no-cache --frozen-lockfile --inline-builds
 
 # 4) Copy the rest of the source and build
 COPY . .
