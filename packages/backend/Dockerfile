@@ -2,7 +2,9 @@
 FROM node:20-bullseye AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-dev \
+    python3 \
+    make \
+    g++ \
     build-essential \
     pkg-config \
     git \
@@ -13,7 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy Yarn Berry / PnP files first
+# (optional) signature so you can confirm CI uses THIS Dockerfile
+RUN echo "DOCKERFILE_SIGNATURE=2025-12-28-v1"
+
+# Copy Yarn Berry files first
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/ .yarn/
 
@@ -22,13 +27,13 @@ COPY packages/app/package.json packages/app/package.json
 COPY packages/backend/package.json packages/backend/package.json
 COPY plugins/ plugins/
 
-# Install deps (Yarn 3)
+# Use Yarn 3 via corepack, then install with Yarn 3 flags only
 RUN corepack enable \
   && corepack prepare yarn@3.6.4 --activate \
   && echo "Yarn version: $(yarn -v)" \
-  && yarn install --immutable --inline-builds --json
+  && yarn install --immutable --inline-builds
 
-# Copy rest + build
+# Copy the rest and build
 COPY . .
 RUN yarn workspace backend build && yarn workspace app build
 
