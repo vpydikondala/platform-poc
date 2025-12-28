@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl-dev \
     libsqlite3-dev \
+    libffi-dev \
+    make \
+    g++ \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -26,10 +29,11 @@ COPY packages/backend/package.json packages/backend/package.json
 COPY plugins/ plugins/
 
 # 3) Clear cache and install dependencies
-RUN rm -rf .yarn/cache .yarn/unplugged .pnp.* \
-  && corepack enable \
-  && corepack prepare yarn@3.6.4 --activate \
-  && yarn install --immutable --inline-builds
+RUN echo "Yarn version: $(yarn -v)" && \
+    rm -rf .yarn/cache .yarn/unplugged .pnp.* && \
+    corepack enable && \
+    corepack prepare yarn@3.6.4 --activate && \
+    yarn install --frozen-lockfile --inline-builds
 
 # 4) Copy the rest of the source and build
 COPY . .
