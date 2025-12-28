@@ -34,7 +34,8 @@ RUN echo "Yarn version (before install): $(yarn -v)" && \
     corepack enable && \
     corepack prepare yarn@3.6.4 --activate && \
     echo "Yarn version (after activation): $(yarn -v)" && \
-    yarn install --immutable --frozen-lockfile --inline-builds
+    yarn install --immutable --frozen-lockfile --inline-builds --verbose
+
 
 # 4) Copy the rest of the source and build
 COPY . .
