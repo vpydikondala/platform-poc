@@ -52,4 +52,6 @@ EXPOSE 7007
 
 # ✅ DO NOT use yarn at runtime (it will be Yarn 1.x and crash)
 # Backstage backend build output is typically here:
-CMD ["node", "packages/backend", "--config", "app-config.production.yaml"]
+#CMD ["node", "packages/backend", "--config", "app-config.production.yaml"]
+CMD ["node", "packages/backend/dist/index.cjs.js", "--config", "app-config.production.yaml"]
+
