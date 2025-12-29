@@ -34,8 +34,7 @@ COPY plugins/ plugins/
 # Use Yarn 3 via corepack, then install with Yarn 3 flags only
 RUN corepack enable \
   && corepack prepare yarn@3.6.4 --activate \
-  && echo "Yarn version: $(yarn -v)" \
-  && yarn install --inline-builds
+  && yarn install
 
 # Copy the rest and build
 COPY . . 
