@@ -35,15 +35,21 @@ COPY plugins/ plugins/
 #    - Activate Yarn 3.6.4
 #    - Force node-modules linker (avoids PnP + TS compat patch issues)
 #    - If install fails, dump native build logs from /tmp
-RUN corepack enable \
-  && corepack prepare yarn@3.6.4 --activate \
-  && echo "Yarn version: $(yarn -v)" \
-  && yarn config set nodeLinker node-modules \
-  && (yarn install --immutable --inline-builds --json || \
-      (echo "==== Yarn install failed; dumping build logs (if any) ====" && \
-       find /tmp -maxdepth 3 -name build.log -print -exec cat {} \; || true && \
-       echo "==== End build logs ====" && \
-       exit 1))
+RUN set -eux; \
+  corepack enable; \
+  corepack prepare yarn@3.6.4 --activate; \
+  echo "Yarn version: $(yarn -v)"; \
+  yarn config set nodeLinker node-modules; \
+  yarn config -v; \
+  yarn config get nodeLinker; \
+  (yarn install --immutable --inline-builds || \
+    (echo "==== Yarn install failed; dumping /tmp logs ===="; \
+     find /tmp -type f \( -name "build.log" -o -name "*.log" -o -name "*.txt" \) -maxdepth 5 -print -exec sed -n '1,200p' {} \; || true; \
+     echo "==== Dumping Yarn error report (if any) ===="; \
+     ls -la /app/.yarn || true; \
+     find /app/.yarn -maxdepth 2 -type f -name "*.log" -print -exec sed -n '1,200p' {} \; || true; \
+     echo "==== End dumps ===="; \
+     exit 1))
 
 # 4) Copy the rest and build
 COPY . .
