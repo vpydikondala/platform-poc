@@ -35,7 +35,7 @@ COPY plugins/ plugins/
 RUN corepack enable \
   && corepack prepare yarn@3.6.4 --activate \
   && echo "Yarn version: $(yarn -v)" \
-  && yarn install --verbose --inline-builds
+  && yarn install --inline-builds
 
 # Copy the rest and build
 COPY . . 
