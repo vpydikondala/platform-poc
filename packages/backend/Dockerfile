@@ -1,7 +1,7 @@
 # ---------- builder ----------
-FROM node:20-bullseye AS builder
+FROM node:18-bullseye AS builder
 
-# Install required dependencies including Python
+# Install required dependencies including Python and others for native module compilation
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-dev \
@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     git \
     ca-certificates \
     libssl-dev \
+    libffi-dev \
     libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -34,18 +35,22 @@ COPY plugins/ plugins/
 RUN corepack enable \
   && corepack prepare yarn@3.6.4 --activate \
   && echo "Yarn version: $(yarn -v)" \
-  && yarn install --immutable --inline-builds
+  && yarn install --verbose --inline-builds
 
 # Copy the rest and build
-COPY . .
+COPY . . 
 RUN yarn workspace backend build && yarn workspace app build
 
 # ---------- runtime ----------
-FROM node:20-bullseye-slim
+FROM node:18-bullseye-slim
 
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Ensure Python 3 is symlinked correctly for node-gyp
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# Copy the built application from the builder stage
 COPY --from=builder /app /app
 
 EXPOSE 7007
