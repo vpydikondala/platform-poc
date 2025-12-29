@@ -1,13 +1,13 @@
 # ---------- builder ----------
 FROM node:18-bullseye AS builder
 
-# Install required dependencies including Python and others for native module compilation
-RUN apt-get update && apt-get install -y \
+# Helpful to confirm CI uses THIS Dockerfile
+RUN echo "DOCKERFILE_SIGNATURE=2025-12-29-v2"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-dev \
     python3-distutils \
-    make \
-    g++ \
     build-essential \
     pkg-config \
     git \
@@ -15,29 +15,38 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libffi-dev \
     libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/*
+
+# Some node-gyp flows still expect `python` in PATH
+RUN ln -sf /usr/bin/python3 /usr/bin/python
 
 WORKDIR /app
 
-# (optional) signature so you can confirm CI uses THIS Dockerfile
-RUN echo "DOCKERFILE_SIGNATURE=2025-12-28-v1"
-
-# Copy Yarn Berry files first
-COPY package.json yarn.lock .yarnrc.yml ./ 
+# 1) Yarn Berry / workspace metadata first (cache-friendly)
+COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/ .yarn/
 
-# Copy workspace manifests BEFORE install
+# 2) Copy workspace manifests BEFORE install
 COPY packages/app/package.json packages/app/package.json
 COPY packages/backend/package.json packages/backend/package.json
 COPY plugins/ plugins/
 
-# Use Yarn 3 via corepack, then install with Yarn 3 flags only
+# 3) Install deps (Yarn 3)
+#    - Activate Yarn 3.6.4
+#    - Force node-modules linker (avoids PnP + TS compat patch issues)
+#    - If install fails, dump native build logs from /tmp
 RUN corepack enable \
   && corepack prepare yarn@3.6.4 --activate \
-  && yarn install
+  && echo "Yarn version: $(yarn -v)" \
+  && yarn config set nodeLinker node-modules \
+  && (yarn install --immutable --inline-builds --json || \
+      (echo "==== Yarn install failed; dumping build logs (if any) ====" && \
+       find /tmp -maxdepth 3 -name build.log -print -exec cat {} \; || true && \
+       echo "==== End build logs ====" && \
+       exit 1))
 
-# Copy the rest and build
-COPY . . 
+# 4) Copy the rest and build
+COPY . .
 RUN yarn workspace backend build && yarn workspace app build
 
 # ---------- runtime ----------
@@ -46,10 +55,6 @@ FROM node:18-bullseye-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Ensure Python 3 is symlinked correctly for node-gyp
-RUN ln -sf /usr/bin/python3 /usr/bin/python
-
-# Copy the built application from the builder stage
 COPY --from=builder /app /app
 
 EXPOSE 7007
