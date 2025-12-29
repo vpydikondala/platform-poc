@@ -1,0 +1,4 @@
+yarn.lock text eol=lf
+.pnp.* -text
+.yarn/patches/*.patch text eol=lf
+.yarnrc.yml text eol=lf
